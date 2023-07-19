@@ -296,6 +296,12 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	float CrouchingCapsuleHalfHeight;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Inventory, meta = (AllowPrivateAccess = "true"))
+	TArray<AItem*> Inventory;
+
+	// To prevent inventory overload
+	const int32 INVENTORY_CAPACITY{ 6 };
+
 public:
 	// Get the pointer
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }

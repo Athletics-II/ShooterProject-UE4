@@ -9,6 +9,7 @@
 #include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
+#include "Curves/CurveVector.h"
 
 // Sets default values
 AItem::AItem() :
@@ -22,7 +23,13 @@ AItem::AItem() :
 	bInterping(false),
 	ItemInterpX(0.f),
 	ItemInterpY(0.f),
-	InterpInitialYawOffset(0.f)
+	InterpInitialYawOffset(0.f),
+	MaterialIndex(0),
+	bCanChangeCustomDepth(true),
+	GlowAmount(150.f),
+	FresnelExponent(3.f),
+	FresnelReflectFraction(4.f),
+	PulseCurveTime(5.f)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -64,6 +71,10 @@ void AItem::BeginPlay()
 
 	// Set Item properties based on state
 	SetItemProperties(ItemState);
+
+	InitializeCustomDepth();
+
+	StartPulseTimer();
 }
 
 void AItem::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -77,7 +88,6 @@ void AItem::OnSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 		}
 	}
 }
-
 
 void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
@@ -126,8 +136,6 @@ void AItem::SetActiveStars()
 		ActiveStars[4] = true;
 		ActiveStars[5] = true;
 		break;
-
-
 	}
 }
 
@@ -207,6 +215,9 @@ void AItem::FinishInterping()
 		Character->GetPickupItem(this);
 		SetActorScale3D(FVector(1.f));
 	}
+	DisableGlowMaterial();
+	bCanChangeCustomDepth = true;
+	DisableCustomDepth();
 }
 
 void AItem::ItemInterp(float DeltaTime)
@@ -261,13 +272,89 @@ void AItem::ItemInterp(float DeltaTime)
 	}
 }
 
+void AItem::EnableCustomDepth()
+{
+	if (bCanChangeCustomDepth)
+	{
+		ItemMesh->SetRenderCustomDepth(true);
+	}
+}
+
+void AItem::DisableCustomDepth()
+{
+	if (bCanChangeCustomDepth)
+	{
+		ItemMesh->SetRenderCustomDepth(false);
+	}
+}
+
+void AItem::InitializeCustomDepth()
+{
+	DisableCustomDepth();
+}
+
+void AItem::OnConstruction(const FTransform& Transform)
+{
+	if (MaterialInstance)
+	{
+		DynamicMaterialInstance = UMaterialInstanceDynamic::Create(MaterialInstance, this);
+		ItemMesh->SetMaterial(MaterialIndex, DynamicMaterialInstance);
+	}
+	EnableGlowMaterial();
+}
+
+void AItem::EnableGlowMaterial()
+{
+	if (DynamicMaterialInstance)
+	{
+		DynamicMaterialInstance->SetScalarParameterValue(TEXT("GlowBlendAlpha"), 0);
+	}
+}
+
+void AItem::UpdatePulse()
+{
+	if (ItemState != EItemState::EIS_Pickup) return;
+
+	const float ElapsedTime{ GetWorldTimerManager().GetTimerElapsed(PulseTimer) };
+	if (PulseCurve)
+	{
+		const FVector CurveValue{ PulseCurve->GetVectorValue(ElapsedTime) };
+		
+		DynamicMaterialInstance->SetScalarParameterValue(TEXT("GlowAmount"), CurveValue.X * GlowAmount);
+		DynamicMaterialInstance->SetScalarParameterValue(TEXT("FresnelExponent"), CurveValue.Y * FresnelExponent);
+		DynamicMaterialInstance->SetScalarParameterValue(TEXT("FresnelReflectFraction"), CurveValue.Z * FresnelReflectFraction);
+	}
+}
+
+void AItem::DisableGlowMaterial()
+{
+	if (DynamicMaterialInstance)
+	{
+		DynamicMaterialInstance->SetScalarParameterValue(TEXT("GlowBlendAlpha"), 1);
+	}
+}
+
 // Called every frame
 void AItem::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	// Handle Item interping when in EquipInterping state
 	ItemInterp(DeltaTime);
+	// Get curve values from PulseCurve and set dynamic material params
+	UpdatePulse();
+}
 
+void AItem::ResetPulseTimer()
+{
+	StartPulseTimer();
+}
+
+void AItem::StartPulseTimer()
+{
+	if (ItemState == EItemState::EIS_Pickup)
+	{
+		GetWorldTimerManager().SetTimer(PulseTimer, this, &AItem::ResetPulseTimer, PulseCurveTime);
+	}
 }
 
 void AItem::SetItemState(EItemState State)
@@ -295,6 +382,7 @@ void AItem::StartItemCurve(AShooterCharacter* Char)
 	const float ItemRotationYaw{ GetActorRotation().Yaw };
 	InterpInitialYawOffset = ItemRotationYaw - CameraRotationYaw;
 
+	bCanChangeCustomDepth = false;
 }
 
 

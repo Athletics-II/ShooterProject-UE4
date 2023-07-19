@@ -28,8 +28,6 @@ void AWeapon::Tick(float DeltaTime)
 		};
 		GetItemMesh()->SetWorldRotation(MeshRotation, false, nullptr, ETeleportType::TeleportPhysics);
 	}
-
-	
 }
 
 void AWeapon::ThrowWeapon()
@@ -52,7 +50,7 @@ void AWeapon::ThrowWeapon()
 		this,
 		&AWeapon::StopFalling,
 		ThrowWeaponTime);
-
+	EnableGlowMaterial();
 }
 
 void AWeapon::DecrementAmmo()
@@ -82,4 +80,5 @@ void AWeapon::StopFalling()
 {
 	bFalling = false;
 	SetItemState(EItemState::EIS_Pickup);
+	StartPulseTimer();
 }

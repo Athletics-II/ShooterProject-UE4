@@ -106,6 +106,9 @@ void AShooterCharacter::BeginPlay()
 	}
 	
 	EquipWeapon(SpawnDefaultWeapon());
+	Inventory.Add(EquippedWeapon);
+	EquippedWeapon->DisableCustomDepth();
+	EquippedWeapon->DisableGlowMaterial();
 
 	InitializeAmmoMap();
 	GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
@@ -427,6 +430,7 @@ void AShooterCharacter::TraceForItems()
 			{
 				// Show pickup widget
 				TraceHitItem->GetPickupWidget()->SetVisibility(true);
+				TraceHitItem->EnableCustomDepth();
 			}
 
 			if (TraceHitItemLastFrame)
@@ -436,6 +440,7 @@ void AShooterCharacter::TraceForItems()
 					// Hitting a different AItem this frame
 					// Or AItem is null
 					TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
+					TraceHitItemLastFrame->DisableCustomDepth();
 				}
 			}
 
@@ -448,6 +453,7 @@ void AShooterCharacter::TraceForItems()
 		// No longer overlapping any item
 		// Item last frame should not show widget
 		TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
+		TraceHitItem->DisableCustomDepth();
 	}
 }
 
@@ -857,7 +863,14 @@ void AShooterCharacter::GetPickupItem(AItem* Item)
 	auto Weapon = Cast<AWeapon>(Item);
 	if (Weapon)
 	{
-		SwapWeapon(Weapon);
+		if (Inventory.Num() < INVENTORY_CAPACITY)
+		{
+			Inventory.Add(Weapon);
+		}
+		else
+		{
+			SwapWeapon(Weapon);
+		}
 	}
 
 	auto Ammo = Cast<AAmmo>(Item);

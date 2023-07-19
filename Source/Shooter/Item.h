@@ -68,6 +68,19 @@ protected:
 	/** Handles Item interpolation when in interp state*/
 	void ItemInterp(float DeltaTime);
 
+	virtual void InitializeCustomDepth();
+
+	virtual void OnConstruction(const FTransform& Transform) override;
+
+	void EnableGlowMaterial();
+
+	void ResetPulseTimer();
+
+	void StartPulseTimer();
+
+	void UpdatePulse();
+
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -140,6 +153,44 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
 	USoundCue* EquipSound;
 
+	/** Index for the material we'd like to change at runtime*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	int32 MaterialIndex;
+
+	/** Dynamic Instance that we can change at runtime*/
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	UMaterialInstanceDynamic* DynamicMaterialInstance;
+
+	/** Material instance used with Dynamic Instance */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	UMaterialInstance* MaterialInstance;
+
+	bool bCanChangeCustomDepth;
+
+	/** Curve to drive the dynamic material parameter */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	class UCurveVector* PulseCurve;
+
+	FTimerHandle PulseTimer;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	float PulseCurveTime;
+
+	UPROPERTY(VisibleAnywhere,  Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	float GlowAmount;
+
+	UPROPERTY(VisibleAnywhere, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	float FresnelExponent;
+
+	UPROPERTY(VisibleAnywhere, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	float FresnelReflectFraction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* IconBackground;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* ItemIcon;
+
 public:
 	FORCEINLINE UWidgetComponent* GetPickupWidget() const { return PickupWidget; }
 
@@ -161,4 +212,9 @@ public:
 
 	void StartItemCurve(AShooterCharacter* Char);
 
+	virtual void EnableCustomDepth();
+
+	virtual void DisableCustomDepth();
+
+	void DisableGlowMaterial();
 };
