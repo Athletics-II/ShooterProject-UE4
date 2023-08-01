@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Engine/DataTable.h"
 #include "Item.generated.h"
 
 UENUM(BlueprintType)
@@ -27,10 +28,29 @@ enum class EItemState : uint8
 	EIS_Equipped UMETA(DisplayName = "Equipped"),
 	EIS_Falling UMETA(DisplayName = "Falling"),
 	
-
 	EIR_MAX UMETA(DisplayName = "DefaultMAX")
 };
 
+USTRUCT(BlueprintType)
+struct FItemRarityTable : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor GlowColor;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor LightColor;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor DarkColor;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 NumberOfStars;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* IconBackground;
+};
 
 UCLASS()
 class SHOOTER_API AItem : public AActor
@@ -85,6 +105,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	void PlayEquipSound(bool bForcePlaySound = false);
+
 private:
 	/** Skeletal Mesh for the item */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
@@ -107,7 +129,7 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
 	int32 ItemCount;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Rarity", meta = (AllowPrivateAccess = "true"))
 	EItemRarity ItemRarity;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = "true"))
@@ -186,10 +208,35 @@ private:
 	float FresnelReflectFraction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
-	UTexture2D* IconBackground;
+	UTexture2D* ItemIcon;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
-	UTexture2D* ItemIcon;
+	UTexture2D* AmmoIcon;
+
+	/** Slot in the inventory array */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
+	int32 SlotIndex;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
+	bool bInventoryFull;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "DataTable", meta = (AllowPrivateAccess = "true"))
+	class UDataTable* ItemRarityDataTable;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Rarity", meta = (AllowPrivateAccess = "true"))
+	FLinearColor GlowColor;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Rarity", meta = (AllowPrivateAccess = "true"))
+	FLinearColor LightColor;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Rarity", meta = (AllowPrivateAccess = "true"))
+	FLinearColor DarkColor;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Rarity", meta = (AllowPrivateAccess = "true"))
+	int32 NumberOfStars;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Rarity", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* IconBackground;
 
 public:
 	FORCEINLINE UWidgetComponent* GetPickupWidget() const { return PickupWidget; }
@@ -208,7 +255,17 @@ public:
 
 	FORCEINLINE USoundCue* GetEquipSound() const { return EquipSound; }
 
+	FORCEINLINE void SetPickupSound(USoundCue* Sound) { PickupSound = Sound; }
+
+	FORCEINLINE void SetEquipSound(USoundCue* Sound) { EquipSound = Sound; }
+
+	FORCEINLINE void SetItemName(FString Name) { ItemName = Name; }
+
 	FORCEINLINE int32 GetItemCount() const { return ItemCount; }
+
+	FORCEINLINE int32 GetSlotIndex() const { return SlotIndex; }
+
+	FORCEINLINE void SetSlotIndex(int32 Index) { SlotIndex = Index; }
 
 	void StartItemCurve(AShooterCharacter* Char);
 
@@ -217,4 +274,27 @@ public:
 	virtual void DisableCustomDepth();
 
 	void DisableGlowMaterial();
+
+	FORCEINLINE void SetCharacter(AShooterCharacter* Char) { Character = Char; }
+
+	FORCEINLINE void SetInventoryFull(bool bFull) { bInventoryFull = bFull; }
+
+	FORCEINLINE void SetIconItem(UTexture2D* Icon) { ItemIcon = Icon; }
+
+	FORCEINLINE void SetAmmoIcon(UTexture2D* Icon) { AmmoIcon = Icon; }
+
+	FORCEINLINE UMaterialInstance* GetMaterialInstance() const { return MaterialInstance; }
+
+	FORCEINLINE void SetMaterialInstance(UMaterialInstance* Instance) { MaterialInstance = Instance; }
+
+	FORCEINLINE UMaterialInstanceDynamic* GetDynamicMaterialInstance() const { return DynamicMaterialInstance; }
+
+	FORCEINLINE void SetDynamicMaterialInstance(UMaterialInstanceDynamic* Instance) { DynamicMaterialInstance = Instance; }
+
+	FORCEINLINE FLinearColor GetGlowColor() const { return GlowColor; }
+
+	FORCEINLINE int32 GetMaterialIndex() const { return MaterialIndex; }
+
+	FORCEINLINE void SetMaterialIndex(int32 Index) { MaterialIndex = Index; }
+
 };

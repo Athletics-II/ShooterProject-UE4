@@ -29,7 +29,9 @@ AItem::AItem() :
 	GlowAmount(150.f),
 	FresnelExponent(3.f),
 	FresnelReflectFraction(4.f),
-	PulseCurveTime(5.f)
+	PulseCurveTime(5.f),
+	SlotIndex(0),
+	bInventoryFull(false)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -97,6 +99,7 @@ void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 		if (ShooterCharacter)
 		{
 			ShooterCharacter->IncrementOverlappedItemCount(-1);
+			ShooterCharacter->UnhighlightInventorySlot();
 		}
 	}
 }
@@ -181,6 +184,7 @@ void AItem::SetItemProperties(EItemState State)
 		ItemMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 		ItemMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
 		ItemMesh->SetEnableGravity(true);
+		ItemMesh->SetVisibility(true);
 
 		AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -204,6 +208,22 @@ void AItem::SetItemProperties(EItemState State)
 		CollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		break;
+
+	case EItemState::EIS_PickedUp:
+		PickupWidget->SetVisibility(false);
+
+		ItemMesh->SetSimulatePhysics(false);
+		ItemMesh->SetVisibility(false);
+		ItemMesh->SetEnableGravity(false);
+		ItemMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		ItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		CollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		break;
 	}
 }
 
@@ -214,6 +234,7 @@ void AItem::FinishInterping()
 	{
 		Character->GetPickupItem(this);
 		SetActorScale3D(FVector(1.f));
+		Character->UnhighlightInventorySlot();
 	}
 	DisableGlowMaterial();
 	bCanChangeCustomDepth = true;
@@ -295,12 +316,52 @@ void AItem::InitializeCustomDepth()
 
 void AItem::OnConstruction(const FTransform& Transform)
 {
+
+	// Load the data in the ItemRarityDataTable
+
+	// Path to the Item Rarity Data Table 
+	FString RarityTablePath(TEXT("DataTable'/Game/_Game/DataTables/ItemRarityDataTable.ItemRarityDataTable'"));
+	UDataTable* RarityTableObject = Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, *RarityTablePath));
+	if (RarityTableObject)
+	{
+		FItemRarityTable* RarityRow = nullptr;
+		switch (ItemRarity)
+		{
+		case EItemRarity::EIR_Damaged:
+			RarityRow = RarityTableObject->FindRow<FItemRarityTable>(FName("Damaged"), TEXT(""));
+			break;
+		case EItemRarity::EIR_Common:
+			RarityRow = RarityTableObject->FindRow<FItemRarityTable>(FName("Common"), TEXT(""));
+			break;
+		case EItemRarity::EIR_Uncommon:
+			RarityRow = RarityTableObject->FindRow<FItemRarityTable>(FName("Uncommon"), TEXT(""));
+			break;
+		case EItemRarity::EIR_Rare:
+			RarityRow = RarityTableObject->FindRow<FItemRarityTable>(FName("Rare"), TEXT(""));
+			break;
+		case EItemRarity::EIR_Legendary:
+			RarityRow = RarityTableObject->FindRow<FItemRarityTable>(FName("Legendary"), TEXT(""));
+			break;
+		}
+		
+		if (RarityRow)
+		{
+			GlowColor = RarityRow->GlowColor;
+			LightColor = RarityRow->LightColor;
+			DarkColor = RarityRow->DarkColor;
+			NumberOfStars = RarityRow->NumberOfStars;
+			IconBackground = RarityRow->IconBackground;
+		}
+	}
+
 	if (MaterialInstance)
 	{
 		DynamicMaterialInstance = UMaterialInstanceDynamic::Create(MaterialInstance, this);
+		DynamicMaterialInstance->SetVectorParameterValue(TEXT("FresnelColor"), GlowColor);
 		ItemMesh->SetMaterial(MaterialIndex, DynamicMaterialInstance);
+
+		EnableGlowMaterial();
 	}
-	EnableGlowMaterial();
 }
 
 void AItem::EnableGlowMaterial()
@@ -344,6 +405,28 @@ void AItem::Tick(float DeltaTime)
 	UpdatePulse();
 }
 
+void AItem::PlayEquipSound(bool bForcePlaySound)
+{
+	if (Character)
+	{
+		if (bForcePlaySound)
+		{
+			if (EquipSound)
+			{
+				UGameplayStatics::PlaySound2D(this, EquipSound);
+			}
+		}
+		else
+		{
+			if (EquipSound)
+			{
+				UGameplayStatics::PlaySound2D(this, EquipSound);
+			}
+		}
+	}
+	
+}
+
 void AItem::ResetPulseTimer()
 {
 	StartPulseTimer();
@@ -367,8 +450,8 @@ void AItem::StartItemCurve(AShooterCharacter* Char)
 {
 	// Store a handle to the Character
 	Character = Char;
-	if (PickupSound)
-	{
+
+	if (PickupSound) {
 		UGameplayStatics::PlaySound2D(this, PickupSound);
 	}
 
