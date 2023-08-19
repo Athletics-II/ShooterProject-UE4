@@ -935,7 +935,7 @@ void AShooterCharacter::HighlightInventorySlot()
 	HighlightedSlot = EmptySlot;
 }
 
- EPhysicalSurface AShooterCharacter::GetSurfaceType()
+EPhysicalSurface AShooterCharacter::GetSurfaceType()
 {
 	FHitResult HitResult;
 	const FVector Start{ GetActorLocation() };
@@ -948,7 +948,8 @@ void AShooterCharacter::HighlightInventorySlot()
 		End, 
 		ECollisionChannel::ECC_Visibility,
 		QueryParams);
-	auto HitSurface = HitResult.PhysMaterial->SurfaceType;
+	UE_LOG(LogTemp, Warning, TEXT("Hit Actor: %s"), *HitResult.Actor->GetName());
+	return UPhysicalMaterial::DetermineSurfaceType(HitResult.PhysMaterial.Get());
 }
 
 void AShooterCharacter::UnhighlightInventorySlot()

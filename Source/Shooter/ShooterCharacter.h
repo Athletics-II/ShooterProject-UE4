@@ -154,6 +154,8 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	EPhysicalSurface GetSurfaceType();
 
+	void SetIsInAir();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -337,6 +339,8 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Inventory, meta = (AllowPrivateAccess = "true"))
 	int32 HighlightedSlot;
 
+	bool bIsInAir;
+
 public:
 	// Get the pointer
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
@@ -364,4 +368,6 @@ public:
 	void UnhighlightInventorySlot();
 
 	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
+
+	FORCEINLINE bool GetIsInAir() const { return ; }
 };
