@@ -16,6 +16,8 @@
 #include "Components/BoxComponent.h"
 #include "Ammo.h"
 #include "Components/CapsuleComponent.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
+#include "Shooter.h"
 
 // Sets default values
 AShooterCharacter::AShooterCharacter() :
@@ -42,7 +44,6 @@ AShooterCharacter::AShooterCharacter() :
 
 	ShootTimeDuration(0.05f),
 	bFiringBullet(false),
-	AutomaticFireRate(0.1f),
 
 	//Autofire variables
 	bShouldFire(true),
@@ -216,7 +217,11 @@ bool AShooterCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, 
 	// Perform second trace from gun barrel
 	FHitResult WeaponTraceHit;
 	const FVector WeaponTraceStart{ MuzzleSocketLocation };
-	const FVector WeaponTraceEnd{ OutBeamLocation };
+
+	const FVector StartToEnd{ OutBeamLocation - WeaponTraceStart }; //changed
+
+	const FVector WeaponTraceEnd{ MuzzleSocketLocation + StartToEnd * 1.25f }; //changed
+	
 	GetWorld()->LineTraceSingleByChannel(
 		WeaponTraceHit,
 		WeaponTraceStart,
@@ -351,13 +356,14 @@ void AShooterCharacter::FireButtonReleased()
 
 void AShooterCharacter::StartFireTimer()
 {
+	if (EquippedWeapon == nullptr) return;
 	CombatState = ECombatState::ECS_FireTimerInProgress;
 
 	GetWorldTimerManager().SetTimer(
 		AutoFireTimer,
 		this,
 		&AShooterCharacter::AutoFireReset,
-		AutomaticFireRate
+		EquippedWeapon->GetAutoFireRate()
 	);
 }
 
@@ -365,9 +371,11 @@ void AShooterCharacter::AutoFireReset()
 {
 	CombatState = ECombatState::ECS_Unoccupied;
 
+	if (EquippedWeapon == nullptr) return; 
+
 	if (WeaponHasAmmo())
 	{
-		if (bFireButtonPressed)
+		if (bFireButtonPressed && EquippedWeapon->GetAutomatic())
 		{
 			FireWeapon();
 		}
@@ -540,7 +548,7 @@ void AShooterCharacter::DropWeapon()
 void AShooterCharacter::SelectButtonPressed()
 {
 	if (CombatState != ECombatState::ECS_Unoccupied) return;
-	if (TraceHitItem)
+	if (TraceHitItem && TraceHitItem->GetSlotIndex() == 0) // patch
 	{
 		TraceHitItem->StartItemCurve(this);
 	}
@@ -585,9 +593,9 @@ bool AShooterCharacter::WeaponHasAmmo()
 void AShooterCharacter::PlayFireSound()
 {
 	// Play fire sound
-	if (FireSound)
+	if (EquippedWeapon->GetFireSound())
 	{
-		UGameplayStatics::PlaySound2D(this, FireSound);
+		UGameplayStatics::PlaySound2D(this, EquippedWeapon->GetFireSound());
 	}
 }
 
@@ -600,9 +608,9 @@ void AShooterCharacter::SendBullet()
 	{
 		const FTransform SocketTransform = BarrelSocket->GetSocketTransform(EquippedWeapon->GetItemMesh());
 
-		if (MuzzleFlash)
+		if (EquippedWeapon->GetMuzzleFlash())
 		{
-			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlash, SocketTransform);
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), EquippedWeapon->GetMuzzleFlash(), SocketTransform);
 		}
 
 		FVector BeamEnd;
@@ -872,6 +880,10 @@ void AShooterCharacter::ExchangeInventoryItems(int32 CurrentItemIndex, int32 New
 {
 	if ((CurrentItemIndex == NewItemIndex) || (NewItemIndex >= Inventory.Num())
 		|| (CombatState != ECombatState::ECS_Unoccupied)) return;
+	if (bAiming)
+	{
+		StopAiming();
+	}
 	auto OldEquippedWeapon = EquippedWeapon;
 	auto NewWeapon = Cast<AWeapon>(Inventory[NewItemIndex]);
 	EquipWeapon(NewWeapon);
@@ -891,6 +903,10 @@ void AShooterCharacter::ExchangeInventoryItems(int32 CurrentItemIndex, int32 New
 void AShooterCharacter::FinishEquipping()
 {
 	CombatState = ECombatState::ECS_Unoccupied;
+	if (bAimingButtonPressed)
+	{
+		Aim();
+	}
 }
 
 int32 AShooterCharacter::GetEmptyInventorySlot()
@@ -917,6 +933,22 @@ void AShooterCharacter::HighlightInventorySlot()
 	const int32 EmptySlot{ GetEmptyInventorySlot() };
 	HighlightIconDelegate.Broadcast(EmptySlot, true);
 	HighlightedSlot = EmptySlot;
+}
+
+ EPhysicalSurface AShooterCharacter::GetSurfaceType()
+{
+	FHitResult HitResult;
+	const FVector Start{ GetActorLocation() };
+	const FVector End{ Start + FVector(0.f, 0.f, -400.f) };
+	FCollisionQueryParams QueryParams;
+	QueryParams.bReturnPhysicalMaterial = true;
+	GetWorld()->LineTraceSingleByChannel(
+		HitResult, 
+		Start, 
+		End, 
+		ECollisionChannel::ECC_Visibility,
+		QueryParams);
+	auto HitSurface = HitResult.PhysMaterial->SurfaceType;
 }
 
 void AShooterCharacter::UnhighlightInventorySlot()
@@ -1021,9 +1053,16 @@ void AShooterCharacter::GetPickupItem(AItem* Item)
 	{
 		if (Inventory.Num() < INVENTORY_CAPACITY)
 		{
-			Weapon->SetSlotIndex(Inventory.Num());
-			Inventory.Add(Weapon);
-			Weapon->SetItemState(EItemState::EIS_PickedUp);
+			if (Weapon->GetSlotIndex() == 0) // patch
+			{
+				Weapon->SetSlotIndex(Inventory.Num());
+				Inventory.Add(Weapon);
+				Weapon->SetItemState(EItemState::EIS_PickedUp);
+			}
+			else
+			{
+				return;
+			}
 		}
 		else
 		{

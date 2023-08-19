@@ -151,6 +151,9 @@ protected:
 
 	void HighlightInventorySlot();
 
+	UFUNCTION(BlueprintCallable)
+	EPhysicalSurface GetSurfaceType();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -192,14 +195,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"), meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"))
 	float MouseAimingTurn;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"), meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.0", UIMax = "1.0"))
 	float MouseAimingLookUp;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
-	class USoundCue* FireSound;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
-	class UParticleSystem* MuzzleFlash;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	class UAnimMontage* HipFireMontage;
@@ -249,8 +247,6 @@ private:
 
 	/** True when we can fire, false when in timer */
 	bool bShouldFire;
-
-	float AutomaticFireRate;
 
 	FTimerHandle AutoFireTimer;
 

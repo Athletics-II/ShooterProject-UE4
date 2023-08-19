@@ -11,7 +11,8 @@ AWeapon::AWeapon() :
 	WeaponType(EWeaponType::EWT_SMG),
 	AmmoType(EAmmoType::EAT_9mm),
 	ReloadMontageSection(FName(TEXT("Reload_SMG"))),
-	ClipBoneName(TEXT("SMG_Clip"))
+	ClipBoneName(TEXT("SMG_Clip")),
+	bAutomatic(true)
 {
 	PrimaryActorTick.bCanEverTick = true;
 }
@@ -51,6 +52,7 @@ void AWeapon::ThrowWeapon()
 		&AWeapon::StopFalling,
 		ThrowWeaponTime);
 	EnableGlowMaterial();
+	SetSlotIndex(0); // patch
 }
 
 void AWeapon::DecrementAmmo()
@@ -103,6 +105,9 @@ void AWeapon::OnConstruction(const FTransform& Transform)
 		case EWeaponType::EWT_AR:
 			WeaponDataRow = WeaponTableObject->FindRow<FWeaponDataTable>(FName("AssaultRifle"), TEXT(""));
 			break;
+		case EWeaponType::EWT_PT:
+			WeaponDataRow = WeaponTableObject->FindRow<FWeaponDataTable>(FName("Pistol"), TEXT(""));
+			break;
 		}
 
 		if (WeaponDataRow)
@@ -121,6 +126,20 @@ void AWeapon::OnConstruction(const FTransform& Transform)
 			PreviousMaterialIndex = GetMaterialIndex();
 			GetItemMesh()->SetMaterial(PreviousMaterialIndex, nullptr);
 			SetMaterialIndex(WeaponDataRow->MaterialIndex);
+			SetClipBoneName(WeaponDataRow->ClipBoneName);
+			SetReloadMontageSection(WeaponDataRow->ReloadMontageSection);
+			GetItemMesh()->SetAnimInstanceClass(WeaponDataRow->AnimBP);
+			CrosshairsMiddle = WeaponDataRow->CrosshairsMiddle;
+			CrosshairsLeft = WeaponDataRow->CrosshairsLeft;
+			CrosshairsRight = WeaponDataRow->CrosshairsRight;
+			CrosshairsBottom = WeaponDataRow->CrosshairsBottom;
+			CrosshairsTop = WeaponDataRow->CrosshairsTop;
+			AutoFireRate = WeaponDataRow->AutoFireRate;
+			MuzzleFlash = WeaponDataRow->MuzzleFlash;
+			FireSound = WeaponDataRow->FireSound;
+			BoneToHide = WeaponDataRow->BoneToHide;
+			bAutomatic = WeaponDataRow->bAutomatic;
+
 			if (GetMaterialInstance())
 			{
 				SetDynamicMaterialInstance(UMaterialInstanceDynamic::Create(GetMaterialInstance(), this));
@@ -131,6 +150,14 @@ void AWeapon::OnConstruction(const FTransform& Transform)
 			}
 		}
 	}
+}
 
+void AWeapon::BeginPlay()
+{
+	Super::BeginPlay();
 
+	if (BoneToHide != FName(""))
+	{
+		GetItemMesh()->HideBoneByName(BoneToHide, EPhysBodyOp::PBO_None);
+	}
 }
