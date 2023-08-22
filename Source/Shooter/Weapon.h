@@ -85,6 +85,12 @@ struct FWeaponDataTable : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bAutomatic;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Damage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float HeadShotDamage;
 };
 
 /**
@@ -172,6 +178,12 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Properties", meta = (AllowPrivateAccess = "true"))
 	bool bAutomatic;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Properties", meta = (AllowPrivateAccess = "true"))
+	float Damage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Properties", meta = (AllowPrivateAccess = "true"))
+	float HeadShotDamage;
+
 public:
 
 	void ThrowWeapon();
@@ -208,4 +220,8 @@ public:
 	FORCEINLINE USoundCue* GetFireSound() const { return FireSound; }
 
 	FORCEINLINE bool GetAutomatic() const { return bAutomatic; }
+
+	FORCEINLINE float GetDamage() const { return Damage; }
+
+	FORCEINLINE float GetHeadShotDamage() const { return HeadShotDamage; }
 };
