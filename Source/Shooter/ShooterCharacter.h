@@ -55,7 +55,7 @@ protected:
 
 	void FireWeapon();
 
-	bool GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation);
+	bool GetBeamEndLocation(const FVector& MuzzleSocketLocation, FHitResult& OutHitResult);
 
 	void AimingButtonPressed();
 	void AimingButtonReleased();
@@ -154,7 +154,8 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	EPhysicalSurface GetSurfaceType();
 
-	void SetIsInAir();
+	UFUNCTION(BlueprintCallable)
+	bool GetIsInAir();
 
 public:	
 	// Called every frame
@@ -339,8 +340,6 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Inventory, meta = (AllowPrivateAccess = "true"))
 	int32 HighlightedSlot;
 
-	bool bIsInAir;
-
 public:
 	// Get the pointer
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
@@ -369,5 +368,4 @@ public:
 
 	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
 
-	FORCEINLINE bool GetIsInAir() const { return ; }
 };
