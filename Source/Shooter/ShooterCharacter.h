@@ -14,6 +14,7 @@ enum class ECombatState : uint8
 	ECS_FireTimerInProgress UMETA(DisplayName = "FireTimerInProgress"),
 	ECS_Reloading UMETA(DisplayName = "Reloading"),
 	ECS_Equipping UMETA(DisplayName = "Equipping"),
+	//ECS_Stunned UMETA(DisplayName = "Stunned"),
 
 	ECS_MAX UMETA(DisplayName = "Default MAX")
 };
@@ -29,6 +30,13 @@ class SHOOTER_API AShooterCharacter : public ACharacter
 public:
 	// Sets default values for this character's properties
 	AShooterCharacter();
+
+	// Take combat damage
+	virtual float TakeDamage(
+		float DamageAmount,
+		struct FDamageEvent const& DamageEvent,
+		class AController* EventInstigator,
+		AActor* DamageCauser) override;
 
 protected:
 	// Called when the game starts or when spawned
@@ -156,6 +164,7 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	bool GetIsInAir();
+
 
 public:	
 	// Called every frame
@@ -340,6 +349,18 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Inventory, meta = (AllowPrivateAccess = "true"))
 	int32 HighlightedSlot;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	float Health;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	float MaxHealth;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	class USoundCue* MeleeHitSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	UParticleSystem* BloodParticles;
+
 public:
 	// Get the pointer
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
@@ -368,4 +389,7 @@ public:
 
 	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
 
+	FORCEINLINE USoundCue* GetMeleeHitSound() const { return MeleeHitSound; }
+
+	FORCEINLINE UParticleSystem* GetBloodParticles() const { return BloodParticles; }
 };

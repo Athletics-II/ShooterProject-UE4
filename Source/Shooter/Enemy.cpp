@@ -13,6 +13,8 @@
 #include "Components/SphereComponent.h"
 #include "ShooterCharacter.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/BoxComponent.h"
+#include "Engine/SkeletalMeshSocket.h"
 
 // Sets default values
 AEnemy::AEnemy() : 
@@ -28,7 +30,10 @@ AEnemy::AEnemy() :
 	AttackLFast(TEXT("AttackLFast")),
 	AttackRFast(TEXT("AttackRFast")),
 	AttackL(TEXT("AttackL")),
-	AttackR(TEXT("AttackR"))
+	AttackR(TEXT("AttackR")),
+	BaseDamage(20.f),
+	LeftWeaponSocket(TEXT("FX_Trail_L_01")),
+	RightWeaponSocket(TEXT("FX_Trail_R_01"))
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -37,6 +42,12 @@ AEnemy::AEnemy() :
 
 	CombatRangeSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CombatRangeSphere"));
 	CombatRangeSphere->SetupAttachment(GetRootComponent());
+
+	LeftWeaponCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("Left Weapon Box"));
+	LeftWeaponCollision->SetupAttachment(GetMesh(), FName("LeftWeaponBone"));
+
+	RightWeaponCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("Right Weapon Box"));
+	RightWeaponCollision->SetupAttachment(GetMesh(), FName("RightWeaponBone"));
 }
 
 // Called when the game starts or when spawned
@@ -47,6 +58,19 @@ void AEnemy::BeginPlay()
 	AgroSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::AgroSphereOverlap);
 	CombatRangeSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::CombatRangeSphereOverlap);
 	CombatRangeSphere->OnComponentEndOverlap.AddDynamic(this, &AEnemy::CombatRangeSphereEndOverlap);
+
+	LeftWeaponCollision->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnLeftWeaponOverlap);
+	RightWeaponCollision->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnRightWeaponOverlap);
+
+	LeftWeaponCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	LeftWeaponCollision->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
+	LeftWeaponCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	LeftWeaponCollision->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
+	
+	RightWeaponCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	RightWeaponCollision->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
+	RightWeaponCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	RightWeaponCollision->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
 
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
@@ -230,6 +254,77 @@ FName AEnemy::GetAttackSectionName()
 		break;
 	}
 	return SectionName;
+}
+
+void AEnemy::OnLeftWeaponOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	auto Character = Cast<AShooterCharacter>(OtherActor);
+	if (Character)
+	{
+		DoDamage(Character);
+		SpawnBlood(Character, LeftWeaponSocket);
+	}
+
+}
+
+void AEnemy::OnRightWeaponOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	auto Character = Cast<AShooterCharacter>(OtherActor);
+	if (Character)
+	{
+		DoDamage(Character);
+		SpawnBlood(Character, RightWeaponSocket);
+	}
+}
+
+void AEnemy::ActivateLeftWeapon()
+{
+	LeftWeaponCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+}
+
+void AEnemy::DeactivateLeftWeapon()
+{
+	LeftWeaponCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
+void AEnemy::ActivateRightWeapon()
+{
+	RightWeaponCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+}
+
+void AEnemy::DeactivateRightWeapon()
+{
+	RightWeaponCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
+void AEnemy::DoDamage(AShooterCharacter* Target)
+{
+	if (Target == nullptr) return;
+
+	UGameplayStatics::ApplyDamage(
+		Target,
+		BaseDamage,
+		EnemyController,
+		this,
+		UDamageType::StaticClass()
+	);
+	if (Target->GetMeleeHitSound())
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, Target->GetMeleeHitSound(), GetActorLocation());
+	}
+}
+
+void AEnemy::SpawnBlood(AShooterCharacter* Target, FName SocketName)
+{
+	const USkeletalMeshSocket* TipSocket{ GetMesh()->GetSocketByName(SocketName) };
+	if (TipSocket)
+	{
+		const FTransform SocketTransform{ TipSocket->GetSocketTransform(GetMesh()) };
+		if (Target->GetBloodParticles())
+		{
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), Target->GetBloodParticles(), SocketTransform);
+		}
+	}
 }
 
 // Called every frame

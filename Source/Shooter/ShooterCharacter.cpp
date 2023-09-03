@@ -67,7 +67,9 @@ AShooterCharacter::AShooterCharacter() :
 	StandingCapsuleHalfHeight(88.f),
 	CrouchingCapsuleHalfHeight(44.f),
 
-	HighlightedSlot(-1)
+	HighlightedSlot(-1),
+	MaxHealth(100.f),
+	Health(100.f)
 
 {
  	// Set this character to call Tick() every frame. You can turn this off to improve performance if you don't need it.
@@ -97,6 +99,19 @@ AShooterCharacter::AShooterCharacter() :
 	GetCharacterMovement()->AirControl = 0.2f;
 
 	HandSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("HandSceneComp"));
+}
+
+float AShooterCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	if (Health - DamageAmount <= 0.f)
+	{
+		Health = 0.f;
+	}
+	else
+	{
+		Health -= DamageAmount;
+	}
+	return DamageAmount;
 }
 
 // Called when the game starts or when spawned

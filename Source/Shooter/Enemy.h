@@ -73,6 +73,35 @@ protected:
 	UFUNCTION(BlueprintPure)
 	FName GetAttackSectionName();
 
+	UFUNCTION()
+	void OnLeftWeaponOverlap(UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnRightWeaponOverlap(UPrimitiveComponent* OverlappedComponent,
+			AActor* OtherActor,
+			UPrimitiveComponent* OtherComp,
+			int32 OtherBodyIndex,
+			bool bFromSweep,
+			const FHitResult& SweepResult);
+
+	UFUNCTION(BlueprintCallable)
+	void ActivateLeftWeapon();
+	UFUNCTION(BlueprintCallable)
+	void DeactivateLeftWeapon();
+	UFUNCTION(BlueprintCallable)
+	void ActivateRightWeapon();
+	UFUNCTION(BlueprintCallable)
+	void DeactivateRightWeapon();
+
+	void DoDamage(class AShooterCharacter* Target);
+
+	void SpawnBlood(AShooterCharacter* Target, FName SocketName);
+
 private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess="true"))
@@ -152,6 +181,20 @@ private:
 	FName AttackL;
 	FName AttackR;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true", MakeEditWidget = "true"))
+	class UBoxComponent* LeftWeaponCollision;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true", MakeEditWidget = "true"))
+	UBoxComponent* RightWeaponCollision;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	float BaseDamage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	FName LeftWeaponSocket;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	FName RightWeaponSocket;
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
