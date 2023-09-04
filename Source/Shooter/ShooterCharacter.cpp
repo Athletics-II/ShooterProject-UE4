@@ -69,7 +69,8 @@ AShooterCharacter::AShooterCharacter() :
 
 	HighlightedSlot(-1),
 	MaxHealth(100.f),
-	Health(100.f)
+	Health(100.f),
+	StunChance(0.3f)
 
 {
  	// Set this character to call Tick() every frame. You can turn this off to improve performance if you don't need it.
@@ -259,7 +260,7 @@ bool AShooterCharacter::GetBeamEndLocation(
 void AShooterCharacter::AimingButtonPressed()
 {
 	bAimingButtonPressed = true;
-	if (CombatState != ECombatState::ECS_Reloading)
+	if (CombatState != ECombatState::ECS_Reloading && CombatState != ECombatState::ECS_Equipping && CombatState != ECombatState::ECS_Stunned)
 	{
 		Aim();
 	}
@@ -389,6 +390,7 @@ void AShooterCharacter::StartFireTimer()
 
 void AShooterCharacter::AutoFireReset()
 {
+	if (CombatState == ECombatState::ECS_Stunned) return;
 	CombatState = ECombatState::ECS_Unoccupied;
 
 	if (EquippedWeapon == nullptr) return; 
@@ -744,6 +746,7 @@ void AShooterCharacter::ReloadWeapon()
 
 void AShooterCharacter::FinishReloading()
 {
+	if (CombatState == ECombatState::ECS_Stunned) return;
 	CombatState = ECombatState::ECS_Unoccupied;
 
 	if (bAimingButtonPressed)
@@ -961,6 +964,7 @@ void AShooterCharacter::ExchangeInventoryItems(int32 CurrentItemIndex, int32 New
 
 void AShooterCharacter::FinishEquipping()
 {
+	if (CombatState == ECombatState::ECS_Stunned) return;
 	CombatState = ECombatState::ECS_Unoccupied;
 	if (bAimingButtonPressed)
 	{
@@ -1023,10 +1027,28 @@ bool AShooterCharacter::GetIsInAir()
 	}
 }
 
+void AShooterCharacter::EndStunned()
+{
+	CombatState = ECombatState::ECS_Unoccupied;
+	if (bAimingButtonPressed) {
+		Aim();
+	}
+}
+
 void AShooterCharacter::UnhighlightInventorySlot()
 {
 	HighlightIconDelegate.Broadcast(HighlightedSlot, false);
 	HighlightedSlot = -1;
+}
+
+void AShooterCharacter::Stun()
+{
+	CombatState = ECombatState::ECS_Stunned;
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		AnimInstance->Montage_Play(HitReactMontage);
+	}
 }
 
 

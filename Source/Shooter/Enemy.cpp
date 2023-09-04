@@ -33,7 +33,9 @@ AEnemy::AEnemy() :
 	AttackR(TEXT("AttackR")),
 	BaseDamage(20.f),
 	LeftWeaponSocket(TEXT("FX_Trail_L_01")),
-	RightWeaponSocket(TEXT("FX_Trail_R_01"))
+	RightWeaponSocket(TEXT("FX_Trail_R_01")),
+	bCanAttack(true),
+	AttackWaitTime(1.f)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -78,6 +80,10 @@ void AEnemy::BeginPlay()
 
 	//Get the AI controller
 	EnemyController = Cast<AEnemyController>(GetController());
+	if (EnemyController)
+	{
+		EnemyController->GetBlackboardComponent()->SetValueAsBool(FName("CanAttack"), true);
+	}
 
 	const FVector WorldPatrolPoint = UKismetMathLibrary::TransformLocation(GetActorTransform(), PatrolPoint);
 	const FVector WorldPatrolPoint2 = UKismetMathLibrary::TransformLocation(GetActorTransform(), PatrolPoint2);
@@ -231,6 +237,17 @@ void AEnemy::PlayAttackMontage(FName Section, float PlayRate)
 		AnimInstance->Montage_Play(AttackMontage);
 		AnimInstance->Montage_JumpToSection(Section, AttackMontage);
 	}
+	bCanAttack = false;
+	GetWorldTimerManager().SetTimer(
+		AttackWaitTimer,
+		this,
+		&AEnemy::ResetCanAttack,
+		AttackWaitTime
+	);
+	if (EnemyController)
+	{
+		EnemyController->GetBlackboardComponent()->SetValueAsBool(FName("CanAttack"), false);
+	}
 }
 
 FName AEnemy::GetAttackSectionName()
@@ -263,6 +280,7 @@ void AEnemy::OnLeftWeaponOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	{
 		DoDamage(Character);
 		SpawnBlood(Character, LeftWeaponSocket);
+		StunCharacter(Character);
 	}
 
 }
@@ -274,6 +292,7 @@ void AEnemy::OnRightWeaponOverlap(UPrimitiveComponent* OverlappedComponent, AAct
 	{
 		DoDamage(Character);
 		SpawnBlood(Character, RightWeaponSocket);
+		StunCharacter(Character);
 	}
 }
 
@@ -325,6 +344,28 @@ void AEnemy::SpawnBlood(AShooterCharacter* Target, FName SocketName)
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), Target->GetBloodParticles(), SocketTransform);
 		}
 	}
+}
+
+void AEnemy::StunCharacter(AShooterCharacter* Victim)
+{
+	if (Victim)
+	{
+		const float Stun{ FMath::FRandRange(0.f, 1.f) };
+		if (Stun <= Victim->GetStunChance())
+		{
+			Victim->Stun();
+		}
+	}
+}
+
+void AEnemy::ResetCanAttack()
+{
+	bCanAttack = true;
+	if (EnemyController)
+	{
+		EnemyController->GetBlackboardComponent()->SetValueAsBool(FName("CanAttack"), true);
+	}
+
 }
 
 // Called every frame

@@ -99,8 +99,11 @@ protected:
 	void DeactivateRightWeapon();
 
 	void DoDamage(class AShooterCharacter* Target);
-
 	void SpawnBlood(AShooterCharacter* Target, FName SocketName);
+
+	void StunCharacter(AShooterCharacter* Victim);
+
+	void ResetCanAttack();
 
 private:
 
@@ -195,6 +198,15 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	FName RightWeaponSocket;
+
+	UPROPERTY(VisibleAnywhere, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	bool bCanAttack;
+
+	FTimerHandle AttackWaitTimer;
+
+	UPROPERTY(EditAnywhere, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	float AttackWaitTime;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
