@@ -165,10 +165,10 @@ void UShooterAnimInstance::TurnInPlace()
 		}
 		else
 		{
-			RecoilWeight = 0.1f;
+			RecoilWeight = 0.3f;
 		}
 	}
-	else if (bAiming || bEquipping)
+	else //if (bAiming || bEquipping)
 	{
 		RecoilWeight = 1.f;
 	}
