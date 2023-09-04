@@ -107,6 +107,8 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void FinishDeath();
+	UFUNCTION()
+	void DestroyEnemy();
 
 private:
 
@@ -214,6 +216,13 @@ private:
 	UAnimMontage* DeathMontage;
 
 	bool bDying;
+
+	/** Time after death before destroyed */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	FTimerHandle DeathTimer;
+
+	float DeathTime;
+
 
 public:	
 	// Called every frame

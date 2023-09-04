@@ -168,6 +168,10 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void EndStunned();
 
+	void Die();
+	UFUNCTION(BlueprintCallable)
+	void FinishDeath();
+
 
 public:	
 	// Called every frame
@@ -370,6 +374,9 @@ private:
 	/** Chance of being stunned when hit */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	float StunChance;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* DeathMontage;
 
 public:
 	// Get the pointer
