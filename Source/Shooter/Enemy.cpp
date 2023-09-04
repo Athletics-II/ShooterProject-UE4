@@ -35,7 +35,8 @@ AEnemy::AEnemy() :
 	LeftWeaponSocket(TEXT("FX_Trail_L_01")),
 	RightWeaponSocket(TEXT("FX_Trail_R_01")),
 	bCanAttack(true),
-	AttackWaitTime(1.f)
+	AttackWaitTime(1.f),
+	bDying(false)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -113,7 +114,20 @@ void AEnemy::ShowHealthBar_Implementation()
 
 void AEnemy::Die()
 {
+	if (bDying) return;
+	bDying = true;
 	HideHealthBar();
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && DeathMontage)
+	{
+		AnimInstance->Montage_Play(DeathMontage);
+	}
+
+	if (EnemyController)
+	{
+		EnemyController->GetBlackboardComponent()->SetValueAsBool(FName("Dead"), true);
+	}
+	EnemyController->StopMovement();
 }
 
 void AEnemy::PlayHitMontage(FName Section, float PlayRate)
@@ -368,6 +382,11 @@ void AEnemy::ResetCanAttack()
 
 }
 
+void AEnemy::FinishDeath()
+{
+	Destroy();
+}
+
 // Called every frame
 void AEnemy::Tick(float DeltaTime)
 {
@@ -407,6 +426,12 @@ void AEnemy::BulletHit_Implementation(FHitResult HitResult)
 
 float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+	// Set the Target Blackboard Key to agro the enemy
+	if (EnemyController)
+	{
+		EnemyController->GetBlackboardComponent()->SetValueAsObject(FName("Target"), DamageCauser);
+	}
+
 	if (Health - DamageAmount <= 0.f)
 	{
 		Health = 0.f;

@@ -105,6 +105,9 @@ protected:
 
 	void ResetCanAttack();
 
+	UFUNCTION(BlueprintCallable)
+	void FinishDeath();
+
 private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess="true"))
@@ -206,6 +209,11 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	float AttackWaitTime;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* DeathMontage;
+
+	bool bDying;
 
 public:	
 	// Called every frame
