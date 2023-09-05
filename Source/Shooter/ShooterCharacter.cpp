@@ -68,6 +68,7 @@ AShooterCharacter::AShooterCharacter() :
 
 	StandingCapsuleHalfHeight(88.f),
 	CrouchingCapsuleHalfHeight(44.f),
+	bCanJump(true),
 
 	HighlightedSlot(-1),
 	MaxHealth(100.f),
@@ -870,7 +871,11 @@ void AShooterCharacter::Jump()
 	}
 	else
 	{
-		ACharacter::Jump();
+		if (bCanJump)
+		{
+			ACharacter::Jump();
+			bCanJump = false;
+		}
 	}
 }
 
