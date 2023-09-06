@@ -217,10 +217,10 @@ private:
 
 	bool bDying;
 
-	/** Time after death before destroyed */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	FTimerHandle DeathTimer;
 
+	/** Time after death before destroyed */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	float DeathTime;
 
 

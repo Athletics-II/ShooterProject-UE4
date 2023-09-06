@@ -864,6 +864,7 @@ void AShooterCharacter::CrouchButtonPressed()
 
 void AShooterCharacter::Jump()
 {
+
 	if (bCrouching)
 	{
 		bCrouching = false;
@@ -1044,7 +1045,6 @@ EPhysicalSurface AShooterCharacter::GetSurfaceType()
 		End, 
 		ECollisionChannel::ECC_Visibility,
 		QueryParams);
-	UE_LOG(LogTemp, Warning, TEXT("Hit Actor: %s"), *HitResult.Actor->GetName());
 	return UPhysicalMaterial::DetermineSurfaceType(HitResult.PhysMaterial.Get());
 }
 
