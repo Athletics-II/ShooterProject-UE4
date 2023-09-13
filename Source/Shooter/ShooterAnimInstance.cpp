@@ -27,7 +27,8 @@ UShooterAnimInstance::UShooterAnimInstance() :
 	RecoilWeight(1.f),
 	bTurningInPlace(false),
 	EquippedWeaponType(EWeaponType::EWT_MAX),
-	bShouldUseFABRIK(false)
+	bShouldUseFABRIK(false),
+	bIsJumping(false)
 {
 
 }
@@ -56,6 +57,7 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 
 		//Is in air?
 		bIsInAir = ShooterCharacter->GetCharacterMovement()->IsFalling();
+		bIsJumping = ShooterCharacter->GetIsJumping();
 
 		//Is moving?
 		if (ShooterCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0) {

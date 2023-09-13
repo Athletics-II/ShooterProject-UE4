@@ -73,7 +73,9 @@ AShooterCharacter::AShooterCharacter() :
 	HighlightedSlot(-1),
 	MaxHealth(100.f),
 	Health(100.f),
-	StunChance(0.3f)
+	StunChance(0.3f),
+
+	bIsJumping(false)
 
 {
  	// Set this character to call Tick() every frame. You can turn this off to improve performance if you don't need it.
@@ -142,6 +144,11 @@ void AShooterCharacter::FinishDeath()
 	{
 		DisableInput(PC);
 	}
+}
+
+void AShooterCharacter::StopJumping()
+{
+	bIsJumping = false;
 }
 
 // Called when the game starts or when spawned
@@ -864,7 +871,7 @@ void AShooterCharacter::CrouchButtonPressed()
 
 void AShooterCharacter::Jump()
 {
-
+	bIsJumping = true;
 	if (bCrouching)
 	{
 		bCrouching = false;
@@ -1117,7 +1124,7 @@ void AShooterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 	PlayerInputComponent->BindAxis("Turn", this, &AShooterCharacter::Turn);
 	PlayerInputComponent->BindAxis("LookUp", this, &AShooterCharacter::LookUp);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AShooterCharacter::Jump);
-	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+	PlayerInputComponent->BindAction("Jump", IE_Released, this, &AShooterCharacter::StopJumping);
 	PlayerInputComponent->BindAction("FireButton", IE_Pressed, this, &AShooterCharacter::FireButtonPressed);
 	PlayerInputComponent->BindAction("FireButton", IE_Released, this, &AShooterCharacter::FireButtonReleased);
 

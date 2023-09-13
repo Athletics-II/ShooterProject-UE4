@@ -172,6 +172,8 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void FinishDeath();
 
+	void StopJumping();
+
 
 public:	
 	// Called every frame
@@ -381,6 +383,9 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* DeathMontage;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	bool bIsJumping;
+
 public:
 	// Get the pointer
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
@@ -416,4 +421,6 @@ public:
 	void Stun();
 
 	FORCEINLINE float GetStunChance() const { return StunChance; }
+
+	FORCEINLINE bool GetIsJumping() const { return bIsJumping; }
 };
